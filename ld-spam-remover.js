@@ -11,6 +11,7 @@ const analyzed = [];
 const users = {};
 let info;
 let displayInfoTimer;
+let countSpamsRemovedLately = 0;
 
 
 const handlePostDataReceived = function (name, data) {
@@ -88,16 +89,17 @@ const getSpamStatus = function (index, body, name) {
 }
 
 const clean = function () {
-    if (document.getElementsByClassName("page-home-home").length <= 0) return;
-
     if (displayInfoTimer > 0) {
         displayInfoTimer--;
         if (displayInfoTimer === 0) {
             info.style.display = "none";
+            countSpamsRemovedLately = 0;
         }
     }
 
-    let elements = document.getElementsByClassName("content-base content-common content-simple");
+    if (document.getElementsByClassName("page-home-home").length <= 0) return;
+
+    let elements = document.getElementsByClassName("page-home-home")[0].getElementsByClassName("content-base content-common content-simple");
     let countRemoved = 0;
     for (let i = 0; i < elements.length; ++i) {
         if (elements[i].classList.contains("ldspam-cleaned")) continue;
@@ -108,17 +110,21 @@ const clean = function () {
         if (nameTag.length <= 0) continue;
         const name = nameTag[0].textContent.replace("@", "");
         const spamStatus = getSpamStatus(i, bodies[0], name);
-        if (spamStatus === 0) {
-            console.log(`LD Spam Remover: ${name}'s post is probably spam and has been hidden.`);
-            elements[i].style.display = "none";
-            countRemoved++;
+        const displayValue = spamStatus === 0 ? "none" : "";
+        if (elements[i].style.display !== displayValue) {
+            elements[i].style.display = displayValue;
+            if (spamStatus === 0) {
+                console.log(`LD Spam Remover: ${name}'s post is probably spam and has been hidden.`);
+                countRemoved++;
+            }
+
         }
-        if (spamStatus !== -1) elements[i].classList.add("ldspam-cleaned");
     }
 
     if (countRemoved > 0) {
+        countSpamsRemovedLately += countRemoved;
         info.style.display = "";
-        info.textContent = `LD Spam Remover: ${countRemoved} more spams removed`;
+        info.textContent = `LD Spam Remover: ${countSpamsRemovedLately} spams removed`;
         displayInfoTimer = 5;
     }
 }
