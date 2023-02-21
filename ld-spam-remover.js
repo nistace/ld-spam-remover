@@ -2,6 +2,8 @@
 // @name     LD Spam Remover
 // @version  1
 // @grant    none
+// @match        https://ldjam.com/
+// @icon         https://www.google.com/s2/favicons?sz=64&domain=ldjam.com
 // ==/UserScript==
 
 // This is a script that tries and hides spam from the ldjam.com main page.
@@ -79,7 +81,12 @@ const getSpamStatus = function (index, body, name) {
         if (users[name].postCount > 2) return 0;
 
         let links = (body.textContent.match(/https?:\/\//g) || []).length;
-        links += body.getElementsByTagName("a").length;
+        let refs = body.getElementsByTagName("a")
+        links += refs.length;
+
+        for (let lnk of refs) {
+            if ("href" in lnk && lnk.href.includes("casino")) return 0;
+        }
 
         // More than 1 link in the post
         if (links > 1) return 0;
