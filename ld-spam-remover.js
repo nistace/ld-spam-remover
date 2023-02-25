@@ -14,7 +14,31 @@ const users = {};
 let info;
 let displayInfoTimer;
 let countSpamsRemovedLately = 0;
+const marked_as_spam = {};
+const SPAMDETECT_PHRASE_a = "SPAMREPORT"
+const SPAMDETECT_PHRASE_b = "SPAM REPORT"
 
+const handleCommentDataReceived = function (name, thread_id, data) {
+    if (data === undefined)
+    {
+      	marked_as_spam[thread_id] = 0;
+        return 1;
+    }
+  
+    for (const comment of data.comment) 
+    {     
+      	if(comment.body.includes(SPAMDETECT_PHRASE_a) || comment.body.includes(SPAMDETECT_PHRASE_b))
+        {
+          	// SPAMREPORT FOUND
+		//
+          	marked_as_spam[thread_id] = 1;
+        	return 0; 
+        }
+    }
+  	
+    marked_as_spam[thread_id] = 0;
+    return 1;
+}
 
 const handlePostDataReceived = function (name, data) {
     if (data === undefined) {
@@ -69,30 +93,71 @@ const loadUserData = function (name) {
     httpRequest.send();
 }
 
+
+const get_spam_report = function (index, thread_id) 
+{
+  	const httpRequest = new XMLHttpRequest();
+    httpRequest.open("GET", `https://api.ldjam.com/vx/comment/getbynode/${thread_id}?limit=10`, true);
+    httpRequest.onload = () => {
+        handleCommentDataReceived(name, thread_id, JSON.parse(httpRequest.response)); // Becomes 0 (spam), when one of the comments contains the text: "SPAM REPORT"
+    }
+    httpRequest.send();  
+}
+
 // -1 = unknown
 //  0 = spam
 //  1 = not spam
-const getSpamStatus = function (index, body, name) {
+const getSpamStatus = function (index, body, name, title) {
     loadUserData(name);
-    if (users[name].gameCount > 0) return 1;
+  
+    let comments_title = title[0].getElementsByTagName("a")[0].getAttribute("title");
+    let thread_id = comments_title.replace(/.* \[\$/i, "");      
+    thread_id = thread_id.replace(/\]$/i, "");
+  
+    let return_status = -1;
+  
+    if(typeof marked_as_spam[thread_id] !== 'undefined')
+    {
+      	if(marked_as_spam[thread_id])
+        {
+             return 0;
+        }
+    }
+
     // No game published
     if (users[name].gameCount === 0) {
         // More than 2 posts by this user
-        if (users[name].postCount > 2) return 0;
+        if (users[name].postCount > 2)
+        {
+            return_status = 0;
+        }
 
         let links = (body.textContent.match(/https?:\/\//g) || []).length;
         let refs = body.getElementsByTagName("a")
         links += refs.length;
 
         for (let lnk of refs) {
-            if ("href" in lnk && lnk.href.includes("casino")) return 0;
+            if ("href" in lnk && lnk.href.includes("casino"))
+            {
+                return_status = 0;
+            }
         }
 
         // More than 1 link in the post
-        if (links > 1) return 0;
+        if (links > 1)
+        {
+            return_status = 0;
+        }
     }
-
-    return -1;
+  	
+    if(return_status != 0)
+    {
+      	// Check if LD user reported this as spam.
+      	//
+  	return_status = get_spam_report(index, thread_id); // When one of the comments contains the text: "SPAM REPORT"
+    }
+  
+    return return_status;
 }
 
 const clean = function () {
@@ -112,11 +177,12 @@ const clean = function () {
         if (elements[i].classList.contains("ldspam-cleaned")) continue;
         let bodies = elements[i].getElementsByClassName("content-common-body -markup -block-if-not-minimized markup");
         let by = elements[i].getElementsByClassName("content-common-body -by");
+      	let title = elements[i].getElementsByClassName("content-common-body -title");
         if (bodies.length <= 0 || by.length <= 0) continue;
         let nameTag = by[0].getElementsByClassName("-at-name");
         if (nameTag.length <= 0) continue;
         const name = nameTag[0].textContent.replace("@", "");
-        const spamStatus = getSpamStatus(i, bodies[0], name);
+        const spamStatus = getSpamStatus(i, bodies[0], name, title);
         const displayValue = spamStatus === 0 ? "none" : "";
         if (elements[i].style.display !== displayValue) {
             elements[i].style.display = displayValue;
