@@ -1,7 +1,8 @@
 // ==UserScript==
 // @name     LD Spam Remover
 // @version  1
-// @grant    none
+// @grant    GM_addStyle
+// @description none
 // @match        https://ldjam.com/
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=ldjam.com
 // ==/UserScript==
@@ -69,11 +70,24 @@ const loadUserData = function (name) {
     httpRequest.send();
 }
 
+let blacklistUsers = [
+    'deden-benoma',
+    'heri',
+    'jack-leo',
+    'boardbandinternetprovider',
+    'kidav52410',
+    'laura5',
+    'tandiv20154'
+];
+
+blacklistUsers = blacklistUsers.concat(JSON.parse(localStorage.getItem("blacklistUsers")));
+
 // -1 = unknown
 //  0 = spam
 //  1 = not spam
 const getSpamStatus = function (index, body, name) {
     loadUserData(name);
+    if (blacklistUsers.includes(name)) return 0;
     if (users[name].gameCount > 0) return 1;
     // No game published
     if (users[name].gameCount === 0) {
@@ -126,6 +140,30 @@ const clean = function () {
             }
 
         }
+
+        if (document.getElementById(`${name + i}`) == null) {
+            var zNode = document.createElement('div');
+            zNode.innerHTML = `<button id=${name + i} type="button" class="spam-button">`
+                            + 'Report Spam</button>'
+                            ;
+            zNode.setAttribute('id', `container-${name + i}`);
+            elements[i].append(zNode);
+
+            // Activate the newly added button.
+            if (document.getElementById(`${name + i}`) != null) {
+                document.getElementById(`${name + i}`).addEventListener (
+                    "click", ButtonClickAction, false
+                );
+            }
+
+            function ButtonClickAction (zEvent) {
+                var zNode = document.createElement('p');
+                zNode.innerHTML = 'Spam Reported!';
+                document.getElementById(`container-${name + i}`).appendChild(zNode);
+                blacklistUsers.push(name);
+                localStorage.setItem("blacklistUsers", JSON.stringify(blacklistUsers));
+            }
+        }
     }
 
     if (countRemoved > 0) {
@@ -134,6 +172,7 @@ const clean = function () {
         info.textContent = `LD Spam Remover: ${countSpamsRemovedLately} spams removed`;
         displayInfoTimer = 5;
     }
+
 }
 
 if (window.location.hostname === "ldjam.com") {
@@ -150,3 +189,24 @@ if (window.location.hostname === "ldjam.com") {
     document.body.appendChild(info);
     setInterval(clean, 1000);
 }
+
+//--- Style our newly added elements using CSS.
+GM_addStyle ( `
+    .spam-button {
+        position: relative;
+        width: auto;
+        padding-left: 1rem;
+        padding-right: 1rem;
+        background: #b9c4d0;
+        display: flex;
+        line-height: 2.5rem;
+        height: 2.5rem;
+        min-width: 1.25rem;
+        color: white;
+        font-size: 1em;
+        font-weight: bold;
+        height: 45px;
+        border: 1px solid white;
+        cursor: pointer;
+    }
+` );
