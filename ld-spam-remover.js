@@ -80,7 +80,15 @@ let blacklistUsers = [
     'tandiv20154'
 ];
 
-blacklistUsers = blacklistUsers.concat(JSON.parse(localStorage.getItem("blacklistUsers")));
+blacklistUsers = blacklistUsers.concat(JSON.parse(localStorage.getItem("blacklistUsers")));/*[
+    'deden-benoma',
+    'heri',
+    'jack-leo',
+    'boardbandinternetprovider',
+    'kidav52410',
+    'laura5',
+    'tandiv20154'
+]*/
 
 // -1 = unknown
 //  0 = spam
@@ -143,6 +151,7 @@ const clean = function () {
 
         if (document.getElementById(`${name + i}`) == null) {
             var zNode = document.createElement('div');
+            zNode.className = 'spam-btn-container';
             zNode.innerHTML = `<button id=${name + i} type="button" class="spam-button">`
                             + 'Report Spam</button>'
                             ;
@@ -162,6 +171,7 @@ const clean = function () {
                 document.getElementById(`container-${name + i}`).appendChild(zNode);
                 blacklistUsers.push(name);
                 localStorage.setItem("blacklistUsers", JSON.stringify(blacklistUsers));
+                console.table(blacklistUsers);
             }
         }
     }
@@ -192,6 +202,12 @@ if (window.location.hostname === "ldjam.com") {
 
 //--- Style our newly added elements using CSS.
 GM_addStyle ( `
+    .spam-btn-container {
+        position: absolute;
+        margin-left: 68px;
+        margin-top: -42px;
+    }
+
     .spam-button {
         position: relative;
         width: auto;
@@ -205,8 +221,12 @@ GM_addStyle ( `
         color: white;
         font-size: 1em;
         font-weight: bold;
-        height: 45px;
-        border: 1px solid white;
+        height: 42px;
+        border: none;
         cursor: pointer;
+    }
+
+    .spam-button:hover {
+        background-color: #ed5533;
     }
 ` );
