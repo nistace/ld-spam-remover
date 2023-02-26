@@ -70,25 +70,11 @@ const loadUserData = function (name) {
     httpRequest.send();
 }
 
-let blacklistUsers = [
-    'deden-benoma',
-    'heri',
-    'jack-leo',
-    'boardbandinternetprovider',
-    'kidav52410',
-    'laura5',
-    'tandiv20154'
-];
+let blacklistUsers = [];
 
-blacklistUsers = blacklistUsers.concat(JSON.parse(localStorage.getItem("blacklistUsers")));/*[
-    'deden-benoma',
-    'heri',
-    'jack-leo',
-    'boardbandinternetprovider',
-    'kidav52410',
-    'laura5',
-    'tandiv20154'
-]*/
+if (localStorage.getItem("blacklistUsers") != null) {
+    blacklistUsers = blacklistUsers.concat(JSON.parse(localStorage.getItem("blacklistUsers")))
+}
 
 // -1 = unknown
 //  0 = spam
@@ -150,13 +136,12 @@ const clean = function () {
         }
 
         if (document.getElementById(`${name + i}`) == null) {
-            var zNode = document.createElement('div');
-            zNode.className = 'spam-btn-container';
-            zNode.innerHTML = `<button id=${name + i} type="button" class="spam-button">`
-                            + 'Report Spam</button>'
-                            ;
-            zNode.setAttribute('id', `container-${name + i}`);
-            elements[i].append(zNode);
+            let spamContainerEl = document.createElement('div');
+            spamContainerEl.className = 'spam-btn-container';
+            spamContainerEl.innerHTML = `<button id=${name + i} type="button" class="spam-button">`
+                                      + 'Report Spam</button>';
+            spamContainerEl.setAttribute('id', `container-${name + i}`);
+            elements[i].append(spamContainerEl);
 
             // Activate the newly added button.
             if (document.getElementById(`${name + i}`) != null) {
@@ -165,13 +150,12 @@ const clean = function () {
                 );
             }
 
-            function ButtonClickAction (zEvent) {
-                var zNode = document.createElement('p');
-                zNode.innerHTML = 'Spam Reported!';
-                document.getElementById(`container-${name + i}`).appendChild(zNode);
+            function ButtonClickAction (event) {
+                let messageEl = document.createElement('p');
+                messageEl.innerHTML = 'Spam Reported!';
+                document.getElementById(`container-${name + i}`).appendChild(messageEl);
                 blacklistUsers.push(name);
                 localStorage.setItem("blacklistUsers", JSON.stringify(blacklistUsers));
-                console.table(blacklistUsers);
             }
         }
     }
